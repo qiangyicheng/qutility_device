@@ -1,6 +1,6 @@
-set(CURRENT_TARGET_NAME info)
+set(CURRENT_TARGET_NAME event)
 
-target_link_libraries(qutility_device_${CURRENT_TARGET_NAME} PRIVATE device_api)
+# target_link_libraries(qutility_device_${CURRENT_TARGET_NAME} PRIVATE device_api)
 
 if(QUTILITY_DEVICE_USE_CUDA)
     target_link_libraries(qutility_device_${CURRENT_TARGET_NAME}
@@ -38,6 +38,10 @@ else()
         hip::device
     )
 endif()
+
+target_link_libraries(qutility_device_${CURRENT_TARGET_NAME} PRIVATE
+    qutility_device_info
+)
 
 target_sources(qutility_device_${CURRENT_TARGET_NAME} PRIVATE
     ${CURRENT_TARGET_NAME}.cpp

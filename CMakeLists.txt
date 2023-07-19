@@ -3,7 +3,6 @@
 # to the root binary directory of the project as ${PROJECT_BINARY_DIR}.
 
 cmake_minimum_required(VERSION 3.14)
-
 include(CheckLanguage)
 check_language(CUDA)
 set(QUTILITY_DEVICE_USE_CUDA)
@@ -31,6 +30,15 @@ FetchContent_GetProperties(device_api)
 if(NOT device_api_POPULATED)
     FetchContent_Populate(device_api)
     add_subdirectory(${device_api_SOURCE_DIR} ${device_api_BINARY_DIR})
+endif()
+
+FetchContent_Declare(qutility
+    GIT_REPOSITORY    https://github.com/qiangyicheng/qutility_cmake.git
+    GIT_TAG           main
+)
+if(NOT qutility_POPULATED)
+    FetchContent_Populate(qutility)
+    add_subdirectory(${qutility_SOURCE_DIR} ${qutility_BINARY_DIR})
 endif()
 
 add_library(${PROJECT_NAME} STATIC)

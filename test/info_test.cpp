@@ -10,7 +10,7 @@
 // other headers
 #include <qutility/array_wrapper/array_wrapper_gpu.h>
 
-TEST(QutilityDeviceInfoTest, MaxBlocksAndThreads)
+TEST(QutilityDeviceInfo, MaxBlocksAndThreads)
 {
     int device = 0;
     auto [max_blocks, max_threads] = qutility::device::info::device_max_blocks_and_threads(device);
