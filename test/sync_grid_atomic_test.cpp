@@ -6,6 +6,7 @@
 
 // project headers
 #include <qutility_device/event.h>
+#include <qutility_device/workspace.h>
 #include <qutility_device/sync_grid.cuh>
 
 // other headers
@@ -44,21 +45,17 @@ __global__ void sum(double *dst, const double *src, int size, double *working)
     }
 }
 
-TEST(QutilityDeviceSyncGrid, Sum)
+TEST(QutilityDeviceSyncGridAtomic, Sum)
 {
     int device = 0;
-
-    qutility::device::event::StreamEventHelper se;
-    se.create_stream_and_event(device);
-    se.sync_device();
 
     constexpr std::size_t test_size = 1024 * 8;
     constexpr std::size_t ThreadsPerBlock = 256;
 
     qutility::array_wrapper::ArrayGPU<double> src(0., test_size, device);
-    qutility::array_wrapper::ArrayGPU<double> working(0., test_size, device);
     qutility::array_wrapper::ArrayGPU<double> dst(0., 1, device);
 
+    qutility::device::workspace::Workspace<double> working(test_size, device);
     double ans_ref = 0;
 
     {
@@ -70,8 +67,8 @@ TEST(QutilityDeviceSyncGrid, Sum)
             src[itr] = randval1;
             ans_ref += randval1;
         }
-        se.launch_kernel_cg<ThreadsPerBlock>(sum<ThreadsPerBlock>, {dst.pointer(), src.pointer(), test_size, working.pointer()}, 0);
-        se.sync_device();
+        working.launch_kernel<ThreadsPerBlock>(sum<ThreadsPerBlock>, {dst.pointer(), src.pointer(), test_size, working.pointer()}, 0);
+        working.sync_device();
         EXPECT_NEAR(dst[0], ans_ref, 1e-8);
     }
 }

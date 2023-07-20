@@ -44,6 +44,7 @@ namespace qutility
             class StreamEventHelper
             {
             public:
+                StreamEventHelper(int device);
                 StreamEventHelper();
                 ~StreamEventHelper();
 

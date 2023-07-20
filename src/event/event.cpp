@@ -7,6 +7,7 @@
 #include "qutility/message.h"
 
 #include "device_api/device_api_helper.h"
+#include "device_api/device_api_cooperative_groups.h"
 
 namespace qutility
 {
@@ -27,6 +28,11 @@ namespace qutility
 
             StreamEventHelper::StreamEventHelper()
             {
+            }
+
+            StreamEventHelper::StreamEventHelper(int device)
+            {
+                create_stream_and_event(device);
             }
 
             StreamEventHelper::~StreamEventHelper()

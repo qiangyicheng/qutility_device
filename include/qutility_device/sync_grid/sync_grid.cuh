@@ -17,26 +17,26 @@ namespace qutility
         {
             namespace detail
             {
-                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSABLE unsigned int atomic_add(volatile unsigned int *addr, unsigned int val)
+                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSIBLE unsigned int atomic_add(volatile unsigned int *addr, unsigned int val)
                 {
                     unsigned int old;
                     old = dapi_atomicAdd((unsigned int *)addr, val);
                     return old;
                 }
 
-                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSABLE bool bar_has_flipped(unsigned int old_arrive, unsigned int current_arrive)
+                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSIBLE bool bar_has_flipped(unsigned int old_arrive, unsigned int current_arrive)
                 {
                     // printf("check bar, arrived = %X, oldArrive = %X, from block %u \n", current_arrive, old_arrive, blockIdx.x);
                     return (((old_arrive ^ current_arrive) & 0x80000000) != 0);
                 }
 
-                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSABLE void bar_flush(volatile unsigned int *addr)
+                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSIBLE void bar_flush(volatile unsigned int *addr)
                 {
                     dapi___threadfence();
                 }
 
                 template <bool is_first>
-                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSABLE void sync_grids(unsigned int expected, volatile unsigned int *arrived)
+                static QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSIBLE void sync_grids(unsigned int expected, volatile unsigned int *arrived)
                 {
                     bool cta_master = (threadIdx.x + threadIdx.y + threadIdx.z == 0);
                     bool gpu_master = (blockIdx.x + blockIdx.y + blockIdx.z == 0);
@@ -81,7 +81,7 @@ namespace qutility
                 }
             }
             template <bool is_first>
-            QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSABLE void sync(unsigned int *bar)
+            QUTILITY_DEVICE_FORCE_INLINE QUTILITY_DEVICE_DEVICE_ACCESSIBLE void sync(unsigned int *bar)
             {
                 unsigned int expected = gridDim.x * gridDim.y * gridDim.z;
 
@@ -93,8 +93,8 @@ namespace qutility
 
 #ifdef QUTILITY_DEVICE_USE_ATOMIC_GRID_SYNC
 #define QUTILITY_DEVICE_SYNC_GRID_PREPARE
-#define QUTILITY_DEVICE_SYNC_GRID_SYNC_FIRST(working) qutility::device::sync_grid::sync<true>((working - QUTILITY_DEVICE_WORKING_PREPAND_SIZE / (sizeof(decltype(*working)))));
-#define QUTILITY_DEVICE_SYNC_GRID_SYNC_REST(working) qutility::device::sync_grid::sync<false>((working - QUTILITY_DEVICE_WORKING_PREPAND_SIZE / (sizeof(decltype(*working)))));
+#define QUTILITY_DEVICE_SYNC_GRID_SYNC_FIRST(working) qutility::device::sync_grid::sync<true>((working - QUTILITY_DEVICE_WORKING_PREPEND_SIZE / (sizeof(decltype(*working)))));
+#define QUTILITY_DEVICE_SYNC_GRID_SYNC_REST(working) qutility::device::sync_grid::sync<false>((working - QUTILITY_DEVICE_WORKING_PREPEND_SIZE / (sizeof(decltype(*working)))));
 #define QUTILITY_DEVICE_SYNC_GRID_SYNC(working) QUTILITY_DEVICE_SYNC_GRID_SYNC_REST(working)
 #else
 #define QUTILITY_DEVICE_SYNC_GRID_PREPARE auto grid = cooperative_groups::this_grid();
