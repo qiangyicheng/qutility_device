@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 include(GoogleTest)
 
+# test info
 set(TEST_NAME info)
 
 if(QUTILITY_DEVICE_USE_CUDA)
@@ -32,6 +33,7 @@ target_link_libraries(${TEST_NAME}_test
 )
 gtest_discover_tests(${TEST_NAME}_test)
 
+# test event
 set(TEST_NAME event)
 
 if(QUTILITY_DEVICE_USE_CUDA)
@@ -46,6 +48,28 @@ add_executable(
 target_link_libraries(${TEST_NAME}_test
     PRIVATE
     ${PROJECT_NAME}_${TEST_NAME}
+    qutility
+    gtest_main
+)
+gtest_discover_tests(${TEST_NAME}_test)
+
+# test sync_grid
+set(TEST_NAME sync_grid)
+
+if(QUTILITY_DEVICE_USE_CUDA)
+    set_property(SOURCE ${TEST_NAME}_test.cpp PROPERTY LANGUAGE CUDA)
+else()
+endif()
+
+add_executable(
+    ${TEST_NAME}_test
+    ${TEST_NAME}_test.cpp
+)
+target_link_libraries(${TEST_NAME}_test
+    PRIVATE
+    ${PROJECT_NAME}_${TEST_NAME}
+    ${PROJECT_NAME}_event
+    device_api
     qutility
     gtest_main
 )
