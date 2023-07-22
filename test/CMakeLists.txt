@@ -101,3 +101,24 @@ target_compile_definitions(${TEST_NAME}_test
     QUTILITY_DEVICE_USE_ATOMIC_GRID_SYNC
 )
 gtest_discover_tests(${TEST_NAME}_test)
+
+# test sync_grid
+set(TEST_NAME dual_field)
+
+if(QUTILITY_DEVICE_USE_CUDA)
+    set_property(SOURCE ${TEST_NAME}_test.cpp PROPERTY LANGUAGE CUDA)
+else()
+endif()
+
+add_executable(
+    ${TEST_NAME}_test
+    ${TEST_NAME}_test.cpp
+)
+target_link_libraries(${TEST_NAME}_test
+    PRIVATE
+    ${PROJECT_NAME}_${TEST_NAME}
+    device_api
+    qutility
+    gtest_main
+)
+gtest_discover_tests(${TEST_NAME}_test)

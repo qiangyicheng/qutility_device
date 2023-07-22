@@ -151,7 +151,7 @@ namespace qutility
             {
                 set_device();
                 check_number_of_threads(dim_block);
-                stream_wait_event(stream_, dependencies...);
+                this_wait_other(dependencies...);
                 auto paras_ptr = qutility::tuple_utility::make_tuple_ptrs(paras);
                 launch_kernel_impl(
                     (void *)kernel,
@@ -177,7 +177,7 @@ namespace qutility
             {
                 set_device();
                 check_number_of_threads(ThreadsPerBlock);
-                stream_wait_event(stream_, dependencies...);
+                this_wait_other(dependencies...);
                 auto paras_ptr = qutility::tuple_utility::make_tuple_ptrs(paras);
                 launch_kernel_impl(
                     (void *)kernel,
@@ -203,7 +203,7 @@ namespace qutility
                 set_device();
                 check_number_of_threads(dim_block);
                 check_number_of_blocks_cg(dim_grid);
-                stream_wait_event(stream_, dependencies...);
+                this_wait_other(dependencies...);
                 auto paras_ptr = qutility::tuple_utility::make_tuple_ptrs(paras);
                 launch_kernel_cg_impl(
                     (void *)kernel,
@@ -229,7 +229,7 @@ namespace qutility
             {
                 set_device();
                 check_number_of_threads(ThreadsPerBlock);
-                stream_wait_event(stream_, dependencies...);
+                this_wait_other(dependencies...);
                 auto paras_ptr = qutility::tuple_utility::make_tuple_ptrs(paras);
                 launch_kernel_cg_impl(
                     (void *)kernel,

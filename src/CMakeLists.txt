@@ -6,5 +6,5 @@ add_subdirectory(workspace)
 ##dummy
 target_sources(${PROJECT_NAME}
     PRIVATE
-    dummy.cpp
+    ${PROJECT_NAME}.cpp
 )
