@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <memory>
 
+#include "dual_field_declare.h"
+
 #include "qutility/array_wrapper/array_wrapper_gpu.h"
 
 #include "qutility_device/event.h"
