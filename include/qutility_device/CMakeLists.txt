@@ -57,3 +57,14 @@ target_sources(${PROJECT_NAME}_${CURRENT_TARGET_NAME} INTERFACE
 )
 
 add_subdirectory(${CURRENT_TARGET_NAME})
+
+# # qutility_device_workspace
+set(CURRENT_TARGET_NAME fft_cb)
+add_library(${PROJECT_NAME}_${CURRENT_TARGET_NAME} STATIC)
+target_include_directories(${PROJECT_NAME}_${CURRENT_TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/)
+target_sources(${PROJECT_NAME}_${CURRENT_TARGET_NAME} PUBLIC
+    ${CURRENT_TARGET_NAME}.cuh
+)
+set_property(TARGET ${PROJECT_NAME}_${CURRENT_TARGET_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
+add_subdirectory(${CURRENT_TARGET_NAME})

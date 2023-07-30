@@ -122,3 +122,33 @@ target_link_libraries(${TEST_NAME}_test
     gtest_main
 )
 gtest_discover_tests(${TEST_NAME}_test)
+
+# test sync_grid
+set(TEST_NAME fft_cb)
+
+if(QUTILITY_DEVICE_USE_CUDA)
+    set_property(SOURCE ${TEST_NAME}_test.cpp PROPERTY LANGUAGE CUDA)
+else()
+endif()
+
+add_executable(
+    ${TEST_NAME}_test
+    ${TEST_NAME}_test.cpp
+)
+
+if(QUTILITY_DEVICE_USE_CUDA)
+    set_property(TARGET ${TEST_NAME}_test PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+else()
+endif()
+
+find_package(FFTW3 CONFIG REQUIRED)
+
+target_link_libraries(${TEST_NAME}_test
+    PRIVATE
+    ${PROJECT_NAME}_${TEST_NAME}
+    device_api
+    qutility
+    gtest_main
+    FFTW3::fftw3
+)
+gtest_discover_tests(${TEST_NAME}_test)
