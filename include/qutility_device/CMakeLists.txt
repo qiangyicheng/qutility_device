@@ -48,8 +48,8 @@ target_sources(${PROJECT_NAME}_${CURRENT_TARGET_NAME} PUBLIC
 
 add_subdirectory(${CURRENT_TARGET_NAME})
 
-# # qutility_device_workspace
-set(CURRENT_TARGET_NAME dual_field)
+# # qutility_device_field
+set(CURRENT_TARGET_NAME field)
 add_library(${PROJECT_NAME}_${CURRENT_TARGET_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME}_${CURRENT_TARGET_NAME} INTERFACE ${PROJECT_SOURCE_DIR}/include/)
 target_sources(${PROJECT_NAME}_${CURRENT_TARGET_NAME} INTERFACE
@@ -58,7 +58,7 @@ target_sources(${PROJECT_NAME}_${CURRENT_TARGET_NAME} INTERFACE
 
 add_subdirectory(${CURRENT_TARGET_NAME})
 
-# # qutility_device_workspace
+# # qutility_device_fft_cb
 set(CURRENT_TARGET_NAME fft_cb)
 add_library(${PROJECT_NAME}_${CURRENT_TARGET_NAME} STATIC)
 target_include_directories(${PROJECT_NAME}_${CURRENT_TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/)

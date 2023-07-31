@@ -4,8 +4,14 @@ namespace qutility
 {
     namespace device
     {
-        namespace dual_field
+        namespace field
         {
+            template <typename ValT>
+            class Field;
+
+            template <typename ValT>
+            class FieldEx;
+            
             template <typename ValT>
             class DualField;
 

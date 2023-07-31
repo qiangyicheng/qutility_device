@@ -1,4 +1,4 @@
-set(CURRENT_TARGET_NAME dual_field)
+set(CURRENT_TARGET_NAME field)
 
 target_sources(qutility_device_${CURRENT_TARGET_NAME} INTERFACE
     ${CURRENT_TARGET_NAME}.h

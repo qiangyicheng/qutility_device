@@ -102,8 +102,8 @@ target_compile_definitions(${TEST_NAME}_test
 )
 gtest_discover_tests(${TEST_NAME}_test)
 
-# test sync_grid
-set(TEST_NAME dual_field)
+# test field
+set(TEST_NAME field)
 
 if(QUTILITY_DEVICE_USE_CUDA)
     set_property(SOURCE ${TEST_NAME}_test.cpp PROPERTY LANGUAGE CUDA)
@@ -123,7 +123,7 @@ target_link_libraries(${TEST_NAME}_test
 )
 gtest_discover_tests(${TEST_NAME}_test)
 
-# test sync_grid
+# test fft_cb
 set(TEST_NAME fft_cb)
 
 if(QUTILITY_DEVICE_USE_CUDA)
