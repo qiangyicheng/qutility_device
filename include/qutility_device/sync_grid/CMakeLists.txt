@@ -8,7 +8,8 @@ target_link_libraries(qutility_device_${CURRENT_TARGET_NAME} INTERFACE
 if(QUTILITY_DEVICE_USE_CUDA)
     target_link_libraries(qutility_device_${CURRENT_TARGET_NAME}
         INTERFACE
-        CUDA::cuda_driver
+        CUDA::cudart_static
+        CUDA::cudart
     )
 else()
     find_package(hip)
