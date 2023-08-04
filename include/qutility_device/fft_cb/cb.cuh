@@ -41,6 +41,26 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
                 ////////////////////////////////////////////////////////////////////////////////
+                struct D2ZLoadShiftLoadMulInfo_st
+                {
+                    const std::size_t shift;
+                    const dapi_cufftDoubleReal *m;
+                };
+                using D2ZLoadShiftLoadMulInfo_t = D2ZLoadShiftLoadMulInfo_st *;
+                __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadShiftLoadMulImpl(const dapi_cufftDoubleReal *dataIn, size_t offset, D2ZLoadShiftLoadMulInfo_t data, void *sharedPointer = nullptr)
+                {
+                    return dataIn[data->shift + offset] * data->m[offset];
+                }
+                __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadShiftLoadMul(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
+                {
+                    return D2ZLoadShiftLoadMulImpl((dapi_cufftDoubleReal *)dataIn, offset, (D2ZLoadShiftLoadMulInfo_t)callerInfo);
+                }
+
+                extern __device__ dapi_cufftCallbackLoadD D2ZLoadShiftLoadMulDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
                 struct D2ZStoreMulRealInfo_st
                 {
                     const dapi_cufftDoubleReal *m;
@@ -55,7 +75,44 @@ namespace qutility
                 {
                     return D2ZStoreMulRealImpl((dapi_cufftDoubleComplex *)dataOut, offset, element, (D2ZStoreMulRealInfo_t)callerInfo);
                 }
-                extern __device__ cufftCallbackStoreZ D2ZStoreMulRealDevicePtr;
+                extern __device__ dapi_cufftCallbackStoreZ D2ZStoreMulRealDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DLoadMulComplexInfo_st
+                {
+                    const dapi_cufftDoubleComplex *m;
+                };
+                using Z2DLoadMulComplexInfo_t = Z2DLoadMulComplexInfo_st *;
+                __device__ __forceinline__ cufftDoubleComplex Z2DLoadMulComplexImpl(const dapi_cufftDoubleComplex *dataIn, size_t offset, Z2DLoadMulComplexInfo_t data, void *sharedPointer = nullptr)
+                {
+                    return dapi_cufftDoubleComplex{
+                        dataIn[offset].x * data->m[offset].x - dataIn[offset].y * data->m[offset].y,
+                        dataIn[offset].x * data->m[offset].y + dataIn[offset].y * data->m[offset].x};
+                }
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulComplex(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DLoadMulComplexImpl((dapi_cufftDoubleComplex *)dataIn, offset, (Z2DLoadMulComplexInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackLoadZ Z2DLoadMulComplexDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DStoreMulInfo_st{
+                    const dapi_cufftDoubleReal *m;
+                };
+                using Z2DStoreMulInfo_t = Z2DStoreMulInfo_st *;
+                __device__ __forceinline__ void Z2DStoreMulImpl(dapi_cufftDoubleReal *dataOut, size_t offset, dapi_cufftDoubleReal element, Z2DStoreMulInfo_t data, void *sharedPointer = nullptr)
+                {
+                    dataOut[offset] = element * data->m[offset];
+                }
+                __device__ __forceinline__ void Z2DStoreMul(void *dataOut, size_t offset, dapi_cufftDoubleReal element, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DStoreMulImpl((dapi_cufftDoubleReal *)dataOut, offset, element, (Z2DStoreMulInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackStoreD Z2DStoreMulDevicePtr;
 
             }
 
