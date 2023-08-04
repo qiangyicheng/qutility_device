@@ -88,10 +88,12 @@ namespace qutility
                     }
                 }
 
-                auto execute(PlanInputDataT *input, PlanOutputDataT *output) -> auto
+                template <typename... dapi_cudaStreamOrEventType>
+                auto execute(PlanInputDataT *input, PlanOutputDataT *output, dapi_cudaStreamOrEventType... dependencies) -> dapi_cudaEvent_t
                 {
                     this->set_device();
                     this->this_wait_other(this->working_->stream_);
+                    this->this_wait_other(dependencies...);
                     if constexpr (dir_ == DIRECTION::FORWARD)
                     {
                         dapi_checkCudaErrors(dapi_cufftExecD2Z(this->plan_, input, output));
@@ -100,6 +102,7 @@ namespace qutility
                     {
                         dapi_checkCudaErrors(dapi_cufftExecZ2D(this->plan_, input, output));
                     }
+                    return record_event();
                 }
 
                 detail::CBStorage<CallbackLoadDataFallbackT> cb_load_data_;

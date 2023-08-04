@@ -34,6 +34,8 @@ namespace qutility
 
                 Field(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device) {}
+                Field(ValT val, std::size_t size, int device)
+                    : size_(size), StreamEventHelper(device), field_(val, size, device) {}
 
                 auto pointer() -> ValT * { return field_.pointer(); }
                 auto pointer() const -> const ValT *const { return field_.pointer(); }
@@ -58,6 +60,8 @@ namespace qutility
 
                 FieldEx(std::size_t size, int device)
                     : Field<ValT>(size, device), field_host_(ValT{}, size) {}
+                FieldEx(ValT val, std::size_t size, int device)
+                    : Field<ValT>(val, size, device), field_host_(val, size) {}
 
                 /// @brief sync field data from host to device. This function DOES NOT imply a synchronization.
                 /// @return the event that marks the completion of the copy. Note that another successive call that reuse the event may change the meaning
@@ -107,6 +111,8 @@ namespace qutility
 
                 DualField(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device), field_diff_(ValT{}, size, device) {}
+                DualField(ValT val, std::size_t size, int device)
+                    : size_(size), StreamEventHelper(device), field_(val, size, device), field_diff_(val, size, device) {}
 
                 auto pointer() -> ValT * { return field_.pointer(); }
                 auto pointer() const -> const ValT * { return field_.pointer(); }
@@ -134,6 +140,8 @@ namespace qutility
 
                 DualFieldEx(std::size_t size, int device)
                     : DualField<ValT>(size, device), field_host_(ValT{}, size), field_diff_host_(ValT{}, size) {}
+                DualFieldEx(ValT val, std::size_t size, int device)
+                    : DualField<ValT>(val, size, device), field_host_(val, size), field_diff_host_(val, size) {}
 
                 /// @brief sync field data from host to device. This function DOES NOT imply a synchronization.
                 /// @return the event that marks the completion of the copy. Note that another successive call that reuse the event may change the meaning

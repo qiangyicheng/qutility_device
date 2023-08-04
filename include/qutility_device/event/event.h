@@ -78,14 +78,14 @@ namespace qutility
                 auto other_wait_this(dapi_cudaStreamFirstType First, dapi_cudaStreamType... Rest) const -> void;
 
                 template <typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-                auto launch_kernel(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t;
+                auto launch_kernel(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
                 template <std::size_t ThreadsPerBlock, typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-                auto launch_kernel(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t;
+                auto launch_kernel(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
 
                 template <typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-                auto launch_kernel_cg(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t;
+                auto launch_kernel_cg(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
                 template <std::size_t ThreadsPerBlock, typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-                auto launch_kernel_cg(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t;
+                auto launch_kernel_cg(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
 
             public:
                 dapi_cudaStream_t stream_ = nullptr;
@@ -147,7 +147,7 @@ namespace qutility
             /// @param ...dependencies all events or streams to depend on
             /// @return the event that marks the finish of the kernel
             template <typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-            auto StreamEventHelper::launch_kernel(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t
+            auto StreamEventHelper::launch_kernel(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
             {
                 set_device();
                 check_number_of_threads(dim_block);
@@ -173,7 +173,7 @@ namespace qutility
             /// @param ...dependencies all events or streams to depend on
             /// @return the event that marks the finish of the kernel
             template <std::size_t ThreadsPerBlock, typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-            auto StreamEventHelper::launch_kernel(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t
+            auto StreamEventHelper::launch_kernel(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
             {
                 set_device();
                 check_number_of_threads(ThreadsPerBlock);
@@ -198,7 +198,7 @@ namespace qutility
             /// @param ...dependencies all events or streams to depend on
             /// @return the event that marks the finish of the kernel
             template <typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-            auto StreamEventHelper::launch_kernel_cg(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t
+            auto StreamEventHelper::launch_kernel_cg(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
             {
                 set_device();
                 check_number_of_threads(dim_block);
@@ -225,7 +225,7 @@ namespace qutility
             /// @param ...dependencies all events or streams to depend on
             /// @return the event that marks the finish of the kernel
             template <std::size_t ThreadsPerBlock, typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
-            auto StreamEventHelper::launch_kernel_cg(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> cudaEvent_t
+            auto StreamEventHelper::launch_kernel_cg(CallableKernelT kernel, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
             {
                 set_device();
                 check_number_of_threads(ThreadsPerBlock);

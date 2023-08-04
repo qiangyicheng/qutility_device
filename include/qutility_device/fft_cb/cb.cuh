@@ -142,7 +142,7 @@ namespace qutility
                     using DeviceRawDataT = RawDataT;
                     using ValueT = std::tuple<void *, std::size_t>;
                     using UnorderedMapT = boost::unordered_map<HostRawDataT, ValueT>;
-                    using HostVectorT = thrust::device_vector<DataT>;
+                    using HostVectorT = std::vector<DataT>;
                     using DeviceVectorT = thrust::device_vector<DeviceRawDataT>;
 
                     auto register_data(const DataT &data) -> void *;
