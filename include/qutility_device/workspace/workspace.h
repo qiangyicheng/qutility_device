@@ -58,8 +58,8 @@ namespace qutility
 
                 operator device_pointer_t() { return (device_pointer_t)pointer_; }
                 operator device_const_pointer_t() const { return (device_pointer_t)pointer_; }
-                device_pointer_t pointer() -> device_pointer_t { return (device_pointer_t)pointer_; }
-                device_const_pointer_t pointer() const -> device_pointer_t { return (device_const_pointer_t)pointer_; }
+                auto pointer() -> device_pointer_t { return (device_pointer_t)pointer_; }
+                auto pointer() const -> device_const_pointer_t { return (device_const_pointer_t)pointer_; }
             };
 
         }
