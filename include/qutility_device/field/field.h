@@ -35,8 +35,8 @@ namespace qutility
                 Field(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device) {}
 
-                ValT * pointer() { return field_.pointer(); }
-                const ValT * pointer() const { return field_.pointer(); }
+                auto pointer() -> ValT * { return field_.pointer(); }
+                auto pointer() const -> const ValT *const { return field_.pointer(); }
 
                 const std::size_t size_;
 
@@ -81,8 +81,8 @@ namespace qutility
                     return this->record_event();
                 }
 
-                ValT * pointer_host() { return field_host_.pointer(); }
-                const ValT *  pointer_host() const { return field_host_.pointer(); }
+                auto pointer_host() -> ValT * { return field_host_.pointer(); }
+                auto pointer_host() const -> const ValT * { return field_host_.pointer(); }
 
                 using host_array_type = qutility::array_wrapper::DArrayDDRPinned<ValT>;
 
@@ -108,10 +108,10 @@ namespace qutility
                 DualField(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device), field_diff_(ValT{}, size, device) {}
 
-                ValT * pointer() { return field_.pointer(); }
-                const ValT *  pointer() const { return field_.pointer(); }
-                ValT * pointer_diff() { return field_diff_.pointer(); }
-                const ValT *  pointer_diff() const { return field_diff_.pointer(); }
+                auto pointer() -> ValT * { return field_.pointer(); }
+                auto pointer() const -> const ValT * { return field_.pointer(); }
+                auto pointer_diff() -> ValT * { return field_diff_.pointer(); }
+                auto pointer_diff() const -> const ValT * { return field_diff_.pointer(); }
 
                 const std::size_t size_;
 
@@ -159,10 +159,10 @@ namespace qutility
                     return this->record_event();
                 }
 
-                ValT * pointer_host() { return field_host_.pointer(); }
-                const ValT *  pointer_host() const { return field_host_.pointer(); }
-                ValT * pointer_diff_host() { return field_diff_host_.pointer(); }
-                const ValT *  pointer_diff_host() const { return field_diff_host_.pointer(); }
+                auto pointer_host() -> ValT * { return field_host_.pointer(); }
+                auto pointer_host() const -> const ValT * { return field_host_.pointer(); }
+                auto pointer_diff_host() -> ValT * { return field_diff_host_.pointer(); }
+                auto pointer_diff_host() const -> const ValT * { return field_diff_host_.pointer(); }
 
                 using host_array_type = qutility::array_wrapper::DArrayDDRPinned<ValT>;
 
