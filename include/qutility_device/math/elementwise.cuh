@@ -47,6 +47,7 @@ namespace qutility
             /// @brief Calculate the exp of an imaginary single field stored in src, and copy the result to dst for dup times. Only 1D grid with 1D block is allowed
             /// @tparam ValT the type of the data
             /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
+            /// @param dst dst is interpretted as complex number, so that two times of storage is required
             template <typename ValT, typename IntT = int>
             __global__ void array_imaginary_exp_dup(IntT single_size, IntT dup, ValT *dst, const ValT *src, ValT coef, ValT index)
             {
