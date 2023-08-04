@@ -43,13 +43,13 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 struct D2ZLoadShiftLoadMulInfo_st
                 {
-                    const std::size_t shift;
+                    const std::ptrdiff_t shift;
                     const dapi_cufftDoubleReal *m;
                 };
                 using D2ZLoadShiftLoadMulInfo_t = D2ZLoadShiftLoadMulInfo_st *;
                 __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadShiftLoadMulImpl(const dapi_cufftDoubleReal *dataIn, size_t offset, D2ZLoadShiftLoadMulInfo_t data, void *sharedPointer = nullptr)
                 {
-                    return dataIn[data->shift + offset] * data->m[offset];
+                    return (dataIn + data->shift)[offset] * data->m[offset];
                 }
                 __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadShiftLoadMul(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
                 {
@@ -100,7 +100,8 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
                 ////////////////////////////////////////////////////////////////////////////////
-                struct Z2DStoreMulInfo_st{
+                struct Z2DStoreMulInfo_st
+                {
                     const dapi_cufftDoubleReal *m;
                 };
                 using Z2DStoreMulInfo_t = Z2DStoreMulInfo_st *;
