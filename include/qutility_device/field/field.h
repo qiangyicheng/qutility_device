@@ -35,6 +35,8 @@ namespace qutility
                 Field(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device) {}
 
+                auto pointer() { return field_.pointer; }
+
                 const std::size_t size_;
 
                 array_type field_;
@@ -78,6 +80,8 @@ namespace qutility
                     return this->record_event();
                 }
 
+                auto pointer_host() { return field_host_.pointer; }
+
                 using host_array_type = qutility::array_wrapper::DArrayDDRPinned<ValT>;
 
                 host_array_type field_host_;
@@ -101,6 +105,9 @@ namespace qutility
 
                 DualField(std::size_t size, int device)
                     : size_(size), StreamEventHelper(device), field_(ValT{}, size, device), field_diff_(ValT{}, size, device) {}
+
+                auto pointer() { return field_.pointer; }
+                auto pointer_diff() { return field_diff_.pointer; }
 
                 const std::size_t size_;
 
@@ -147,6 +154,9 @@ namespace qutility
                     qutility::array_wrapper::array_copy_async(field_diff_host_, this->field_diff_, 0, this->stream_);
                     return this->record_event();
                 }
+
+                auto pointer_host() { return field_host_.pointer; }
+                auto pointer_diff_host() { return field_diff_host_.pointer; }
 
                 using host_array_type = qutility::array_wrapper::DArrayDDRPinned<ValT>;
 
