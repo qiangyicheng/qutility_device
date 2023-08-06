@@ -16,11 +16,69 @@ namespace qutility
     {
         namespace math
         {
+            template <std::size_t Order, typename ValT>
+            __device__ __forceinline__ ValT fast_exponent(ValT val)
+            {
+                if constexpr (Order == 0)
+                {
+                    return 0;
+                }
+                else if constexpr (Order == 1)
+                {
+                    return val;
+                }
+                else if constexpr (Order == 2)
+                {
+                    return val * val;
+                }
+                else
+                {
+                    return fast_exponent<Order / 2>(val) * fast_exponent<Order - (Order / 2)>(val);
+                }
+            }
+
+            template <std::size_t Order, typename ValT = double, typename IntT = int>
+            __device__ __forceinline__ ValT nabla_eigen_index_1D_half_impl(IntT pos, IntT NN)
+            {
+                if constexpr (Order == 0)
+                {
+                    return 0;
+                }
+                else if constexpr (Order % 2 == 1)
+                {
+                    ValT val = (pos * 2) == NN ? (ValT)0 : (ValT)pos;
+                    return fast_exponent<Order, ValT>(val);
+                }
+                else
+                {
+                    ValT val = pos;
+                    return fast_exponent<Order, ValT>(val);
+                }
+            }
+
+            template <std::size_t Order, typename ValT = double, typename IntT = int>
+            __device__ __forceinline__ ValT nabla_eigen_index_1D_impl(IntT pos, IntT NN)
+            {
+                ValT val = (ValT)pos - (int)(pos > ((NN + 1) / 2)) * (ValT)NN;
+                if constexpr (Order == 0)
+                {
+                    return 0;
+                }
+                else if constexpr (Order % 2 == 1)
+                {
+                    val *= (ValT)((pos * 2) == NN);
+                    return fast_exponent<Order, ValT>(val);
+                }
+                else
+                {
+                    return fast_exponent<Order, ValT>(val);
+                }
+            }
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
-            __global__ __forceinline__ void laplacian_eigenvalue_1D(ValT *k, ValT factor_x, IntT Nx)
+            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            __global__ __forceinline__ void nabla_eigenvalue_1D(ValT *k, ValT factor_x, IntT Nx)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
 
@@ -32,18 +90,14 @@ namespace qutility
 
                 for (IntT itr_x = thread_rank; itr_x < Nx_hermit; itr_x += grid_size)
                 {
-                    auto val = itr_x * itr_x * factor_x;
-                    if constexpr (IfLastDimModified)
-                        val *= (2. - ((itr_x % ((Nx + 1) / 2)) == 0));
-
-                    k[itr_x] = val;
+                    k[itr_x] = factor_x * nabla_eigen_index_1D_half_impl<Order, ValT, IntT>(itr_x, Nx);
                 }
             }
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
-            __global__ __forceinline__ void laplacian_eigenvalue_2D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, IntT Nx, IntT Ny)
+            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            __global__ __forceinline__ void nabla_eigenvalue_2D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, IntT Nx, IntT Ny)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
 
@@ -70,16 +124,14 @@ namespace qutility
                 {
                     for (IntT itr_x = thread_rank; itr_x < Nx; itr_x += thread_for_x)
                     {
-                        k_x[itr_x] = (ValT)itr_x - (int)(itr_x > ((Nx + 1) / 2)) * (ValT)Nx;
-                        k_x[itr_x] *= k_x[itr_x];
-                        k_x[itr_x] *= factor_x;
+                        k_x[itr_x] = factor_x * nabla_eigen_index_1D_impl<Order, ValT, IntT>(itr_x, Nx);
                     }
                 }
                 else if (blockIdx.x < block_for_x + block_for_y)
                 {
                     for (IntT itr_y = thread_rank - thread_for_x; itr_y < Ny_hermit; itr_y += thread_for_y)
                     {
-                        k_y[itr_y] = itr_y * itr_y * factor_y;
+                        k_y[itr_y] = factor_y * nabla_eigen_index_1D_half_impl<Order, ValT, IntT>(itr_y, Ny);
                     }
                 }
 
@@ -100,8 +152,8 @@ namespace qutility
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
-            __global__ __forceinline__ void laplacian_eigenvalue_3D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, ValT factor_z, IntT Nx, IntT Ny, IntT Nz)
+            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            __global__ __forceinline__ void nabla_eigenvalue_3D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, ValT factor_z, IntT Nx, IntT Ny, IntT Nz)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
 
@@ -135,25 +187,21 @@ namespace qutility
                 {
                     for (IntT itr_x = thread_rank; itr_x < Nx; itr_x += thread_for_x)
                     {
-                        k_x[itr_x] = (ValT)itr_x - (int)(itr_x > ((Nx + 1) / 2)) * (ValT)Nx;
-                        k_x[itr_x] *= k_x[itr_x];
-                        k_x[itr_x] *= factor_x;
+                        k_x[itr_x] = factor_x * nabla_eigen_index_1D_impl<Order, ValT, IntT>(itr_x, Nx);
                     }
                 }
                 else if (blockIdx.x < block_for_x + block_for_y)
                 {
                     for (IntT itr_y = thread_rank - thread_for_x; itr_y < Ny; itr_y += thread_for_y)
                     {
-                        k_y[itr_y] = (ValT)itr_y - (int)(itr_y > ((Ny + 1) / 2)) * (ValT)Ny;
-                        k_y[itr_y] *= k_y[itr_y];
-                        k_y[itr_y] *= factor_y;
+                        k_y[itr_y] = factor_y * nabla_eigen_index_1D_impl<Order, ValT, IntT>(itr_y, Ny);
                     }
                 }
                 else if (blockIdx.x < block_for_x + block_for_y + block_for_z)
                 {
                     for (IntT itr_z = thread_rank - thread_for_x - thread_for_y; itr_z < Nz_hermit; itr_z += thread_for_z)
                     {
-                        k_z[itr_z] = itr_z * itr_z * factor_z;
+                        k_z[itr_z] = factor_z * nabla_eigen_index_1D_half_impl<Order, ValT, IntT>(itr_z, Nz);
                     }
                 }
 

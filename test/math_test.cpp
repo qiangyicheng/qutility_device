@@ -58,7 +58,7 @@ TEST(QutilityDeviceMath, LaplacianEigenvalue1D)
     qutility::device::field::FieldEx<ValT> k_new(size_hermit, device);
     qutility::device::field::FieldEx<ValT> k_old(size_hermit, device);
 
-    k_new.launch_kernel(qutility::device::math::laplacian_eigenvalue_1D<>, {7, 1, 1}, {128, 1, 1}, {k_new.field_, 1. / (lx * lx), Nx}, 0);
+    k_new.launch_kernel(qutility::device::math::nabla_eigenvalue_1D<>, {7, 1, 1}, {128, 1, 1}, {k_new.field_, 1. / (lx * lx), Nx}, 0);
     k_old.launch_kernel<256>(calc_eigenvalue_ref<1, false, 256, 4>, {k_old.field_, nullptr, 0, 0, 1. / (lx * lx), 0, 0, Nx}, 0);
 
     k_new.device_to_host();
@@ -86,7 +86,7 @@ TEST(QutilityDeviceMath, LaplacianEigenvalue2D)
     qutility::device::field::FieldEx<ValT> k_new(size_hermit, device);
     qutility::device::field::FieldEx<ValT> k_old(size_hermit, device);
 
-    k_new.launch_kernel_cg(qutility::device::math::laplacian_eigenvalue_2D<>, {7, 1, 1}, {127, 1, 1}, {k_new.field_, working.field_, 1. / (lx * lx), 1. / (ly * ly), Nx, Ny}, 0);
+    k_new.launch_kernel_cg(qutility::device::math::nabla_eigenvalue_2D<>, {7, 1, 1}, {127, 1, 1}, {k_new.field_, working.field_, 1. / (lx * lx), 1. / (ly * ly), Nx, Ny}, 0);
     k_old.launch_kernel_cg<256>(calc_eigenvalue_ref<2, false, 256, 4>, {k_old.field_, working.field_, 0, 1. / (lx * lx), 1. / (ly * ly), 0, Nx, Ny}, 0, k_new.stream_);
 
     k_new.device_to_host();
@@ -116,7 +116,7 @@ TEST(QutilityDeviceMath, LaplacianEigenvalue3D)
     qutility::device::field::FieldEx<ValT> k_new(size_hermit, device);
     qutility::device::field::FieldEx<ValT> k_old(size_hermit, device);
 
-    k_new.launch_kernel_cg(qutility::device::math::laplacian_eigenvalue_3D<>, {7, 1, 1}, {127, 1, 1}, {k_new.field_, working.field_, 1. / (lx * lx), 1. / (ly * ly), 1. / (lz * lz), Nx, Ny, Nz}, 0);
+    k_new.launch_kernel_cg(qutility::device::math::nabla_eigenvalue_3D<>, {7, 1, 1}, {127, 1, 1}, {k_new.field_, working.field_, 1. / (lx * lx), 1. / (ly * ly), 1. / (lz * lz), Nx, Ny, Nz}, 0);
     k_old.launch_kernel_cg<256>(calc_eigenvalue_ref<3, false, 256, 4>, {k_old.field_, working.field_, 1. / (lx * lx), 1. / (ly * ly), 1. / (lz * lz), Nx, Ny, Nz}, 0, k_new.stream_);
 
     k_new.device_to_host();
