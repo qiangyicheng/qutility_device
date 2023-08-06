@@ -155,6 +155,25 @@ namespace qutility
                 }
             }
 
+            /// @brief mix three arrays
+            template <typename ValT, typename IntT = int>
+            __global__ void array_mix_3(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *src3, const ValT *coef, ValT factor1, ValT factor2, ValT factor3)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor1;
+                    auto val2 = src2[itr] * factor2;
+                    auto val3 = src3[itr] * factor3;
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 3 + 0] + val2 * coef[itr_mix * 3 + 1] + val3 * coef[itr_mix * 3 + 2];
+                    }
+                }
+            }
+
         }
     }
 }
