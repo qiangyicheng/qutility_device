@@ -43,8 +43,8 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 struct D2ZLoadShiftLoadMulInfo_st
                 {
-                    const std::ptrdiff_t shift;
                     const dapi_cufftDoubleReal *m;
+                    const std::ptrdiff_t shift;
                 };
                 using D2ZLoadShiftLoadMulInfo_t = D2ZLoadShiftLoadMulInfo_st *;
                 __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadShiftLoadMulImpl(const dapi_cufftDoubleReal *dataIn, size_t offset, D2ZLoadShiftLoadMulInfo_t data, void *sharedPointer = nullptr)
@@ -57,6 +57,29 @@ namespace qutility
                 }
 
                 extern __device__ dapi_cufftCallbackLoadD D2ZLoadShiftLoadMulDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct D2ZLoadHalfMulIncreMulInfo_st
+                {
+                    const dapi_cufftDoubleReal *m;
+                    const dapi_cufftDoubleReal *incre_mul_src;
+                    dapi_cufftDoubleReal *incre_dst;
+                };
+                using D2ZLoadHalfMulIncreMulInfo_t = D2ZLoadHalfMulIncreMulInfo_st *;
+                __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadHalfMulIncreMulImpl(const dapi_cufftDoubleReal *dataIn, size_t offset, D2ZLoadHalfMulIncreMulInfo_t data, void *sharedPointer = nullptr)
+                {
+                    auto val = dataIn[offset];
+                    data->incre_dst[offset] += 0.5 * data->incre_mul_src[offset] * val;
+                    return val * data->m[offset];
+                }
+                __device__ __forceinline__ dapi_cufftDoubleReal D2ZLoadHalfMulIncreMul(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
+                {
+                    return D2ZLoadHalfMulIncreMulImpl((dapi_cufftDoubleReal *)dataIn, offset, (D2ZLoadHalfMulIncreMulInfo_t)callerInfo);
+                }
+
+                extern __device__ dapi_cufftCallbackLoadD D2ZLoadHalfMulIncreMulDevicePtr;
 
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
@@ -114,6 +137,49 @@ namespace qutility
                     return Z2DStoreMulImpl((dapi_cufftDoubleReal *)dataOut, offset, element, (Z2DStoreMulInfo_t)callerInfo);
                 }
                 extern __device__ dapi_cufftCallbackStoreD Z2DStoreMulDevicePtr;
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DStoreMulMulIncreInfo_st
+                {
+                    const dapi_cufftDoubleReal *m;
+                    const dapi_cufftDoubleReal *incre_mul_src;
+                    dapi_cufftDoubleReal *incre_dst;
+                };
+                using Z2DStoreMulMulIncreInfo_t = Z2DStoreMulMulIncreInfo_st *;
+                __device__ __forceinline__ void Z2DStoreMulMulIncreImpl(dapi_cufftDoubleReal *dataOut, size_t offset, dapi_cufftDoubleReal element, Z2DStoreMulMulIncreInfo_t data, void *sharedPointer = nullptr)
+                {
+                    auto val = element * data->m[offset];
+                    dataOut[offset] = val;
+                    data->incre_dst[offset] += data->incre_mul_src[offset] * val;
+                }
+                __device__ __forceinline__ void Z2DStoreMulMulIncre(void *dataOut, size_t offset, dapi_cufftDoubleReal element, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DStoreMulMulIncreImpl((dapi_cufftDoubleReal *)dataOut, offset, element, (Z2DStoreMulMulIncreInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackStoreD Z2DStoreMulMulIncreDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DStoreMulHalfMulIncreInfo_st
+                {
+                    const dapi_cufftDoubleReal *m;
+                    const dapi_cufftDoubleReal *incre_mul_src;
+                    dapi_cufftDoubleReal *incre_dst;
+                };
+                using Z2DStoreMulHalfMulIncreInfo_t = Z2DStoreMulHalfMulIncreInfo_st *;
+                __device__ __forceinline__ void Z2DStoreMulHalfMulIncreImpl(dapi_cufftDoubleReal *dataOut, size_t offset, dapi_cufftDoubleReal element, Z2DStoreMulHalfMulIncreInfo_t data, void *sharedPointer = nullptr)
+                {
+                    auto val = element * data->m[offset];
+                    dataOut[offset] = val;
+                    data->incre_dst[offset] += 0.5 * data->incre_mul_src[offset] * val;
+                }
+                __device__ __forceinline__ void Z2DStoreMulHalfMulIncre(void *dataOut, size_t offset, dapi_cufftDoubleReal element, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DStoreMulHalfMulIncreImpl((dapi_cufftDoubleReal *)dataOut, offset, element, (Z2DStoreMulHalfMulIncreInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackStoreD Z2DStoreMulHalfMulIncreDevicePtr;
 
             }
 
@@ -158,6 +224,8 @@ namespace qutility
                     DeviceVectorT d_vec_;
 
                     static auto make_raw_data(const DataT &data) -> HostRawDataT;
+
+                    void *old_d_vec_start_ = nullptr;
                 };
 
                 template <typename DataT>
@@ -187,6 +255,18 @@ namespace qutility
                         std::size_t current_index = h_vec_.size() - 1;
                         auto current_leading_ptr = thrust::raw_pointer_cast(&(d_vec_[current_index * slice_size]));
                         map_.emplace(raw_data, ValueT{current_leading_ptr, current_index});
+
+                        auto d_vec_start = (void *)(thrust::raw_pointer_cast(&(d_vec_[0])));
+                        if (old_d_vec_start_ != d_vec_start)
+                        {
+                            old_d_vec_start_ = d_vec_start;
+                            // reallocation detected, fix all the pointers stored
+                            for (auto &ele : map_)
+                            {
+                                std::get<ValueFields::DEVICE_POINTER>(ele.second) = ((RawDataT *)d_vec_start + std::get<ValueFields::DEVICE_CONTAINER_INDEX>(ele.second) * slice_size);
+                            }
+                        }
+
                         return current_leading_ptr;
                     }
                 }

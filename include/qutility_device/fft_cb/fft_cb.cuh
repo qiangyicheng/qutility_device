@@ -66,6 +66,7 @@ namespace qutility
                     {
                         this->set_device();
                         auto load_data_host = cb_load_data_.register_data(load_data);
+                        dapi_checkCudaErrors(dapi_cufftXtClearCallback(this->plan_, call_back_load_t_));
                         dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&load_kernel_host_ptr_, call_back_load_t_, &load_data_host));
                     }
                     else
@@ -80,6 +81,7 @@ namespace qutility
                     {
                         this->set_device();
                         auto store_data_host = cb_store_data_.register_data(store_data);
+                        dapi_checkCudaErrors(dapi_cufftXtClearCallback(this->plan_, call_back_store_t_));
                         dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&store_kernel_host_ptr_, call_back_store_t_, &store_data_host));
                     }
                     else
