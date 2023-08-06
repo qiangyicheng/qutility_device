@@ -59,14 +59,14 @@ namespace qutility
             template <std::size_t Order, typename ValT = double, typename IntT = int>
             __device__ __forceinline__ ValT nabla_eigen_index_1D_impl(IntT pos, IntT NN)
             {
-                ValT val = (ValT)pos - (int)(pos > ((NN + 1) / 2)) * (ValT)NN;
+                ValT val = (ValT)pos - ((int)(pos > ((NN + 1) / 2))) * (ValT)NN;
                 if constexpr (Order == 0)
                 {
                     return 0;
                 }
                 else if constexpr (Order % 2 == 1)
                 {
-                    val *= (ValT)((pos * 2) == NN);
+                    val *= (pos * 2) == NN ? 0. : 1.;
                     return fast_exponent<Order, ValT>(val);
                 }
                 else
