@@ -8,4 +8,5 @@ target_link_libraries(qutility_device_${CURRENT_TARGET_NAME} INTERFACE
 target_sources(qutility_device_${CURRENT_TARGET_NAME} INTERFACE
     elementwise.cuh
     eigenvalue.cuh
+    reduction.cuh
 )
