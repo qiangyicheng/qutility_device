@@ -4,6 +4,7 @@
 #include <tuple>
 #include <optional>
 #include <utility>
+#include <functional>
 
 #include "qutility/traits.h"
 #include "qutility/tuple_utility.h"
@@ -18,6 +19,14 @@ namespace qutility
     {
         namespace event
         {
+
+            namespace detail
+            {
+                /// @brief run a callable std::function<void()> object and delete it after being used
+                /// @param functor_ptr void * casted from std::function<void()> *
+                auto run_and_delete_afterwards(void *functor_ptr) -> void;
+            }
+
             /// @brief let a stream wait for the event(s)
             /// @param stream stream that will wait
             auto stream_wait_event(dapi_cudaStream_t stream) -> void;
@@ -54,6 +63,7 @@ namespace qutility
             public:
                 auto set_device() const -> void;
                 auto sync_device() const -> void;
+                auto sync_stream() const -> void;
                 auto create_stream_and_event(int device) -> void;
                 auto destroy_stream_and_event() -> void;
                 auto record_event() const -> dapi_cudaEvent_t;
@@ -76,6 +86,11 @@ namespace qutility
                 auto other_wait_this() const -> void;
                 template <typename dapi_cudaStreamFirstType, typename... dapi_cudaStreamType>
                 auto other_wait_this(dapi_cudaStreamFirstType First, dapi_cudaStreamType... Rest) const -> void;
+
+                template <typename... dapi_cudaStreamOrEventType>
+                auto launch_host_func(const std::function<void()> & functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
+                template <typename FuncT, typename... dapi_cudaStreamOrEventType>
+                auto launch_host_func(FuncT func, func_args_tuple<FuncT> paras, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
 
                 template <typename CallableKernelT, typename... dapi_cudaStreamOrEventType>
                 auto launch_kernel(CallableKernelT kernel, dim3 dim_grid, dim3 dim_block, func_args_tuple<CallableKernelT> paras, size_t sharedMem, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
@@ -103,6 +118,7 @@ namespace qutility
                 auto other_wait_this_impl(dapi_cudaStream_t other) const -> void;
                 auto this_wait_other_impl(dapi_cudaStream_t other) const -> void;
                 auto this_wait_other_impl(dapi_cudaEvent_t other) const -> void;
+                auto launch_host_func_impl(void *functor_ptr) const -> void;
                 auto launch_kernel_impl(void *func, dim3 dim_grid, dim3 dim_block, void **arg_ptr_table, std::size_t sharedMem) const -> void;
                 auto launch_kernel_cg_impl(void *func, dim3 dim_grid, dim3 dim_block, void **arg_ptr_table, std::size_t sharedMem) const -> void;
             };
@@ -133,6 +149,41 @@ namespace qutility
                 this_wait_other_impl(First);
                 this_wait_other(Rest...);
                 return;
+            }
+
+            /// @brief Launch host function on the stream specified in this helper class.
+            ///        The parameter pack expects the dependencies this function launch will depend on.
+            ///        Note that this does not mean a synchronization.
+            /// @param functor The functor to call
+            /// @param ...dependencies all events or streams to depend on
+            template <typename... dapi_cudaStreamOrEventType>
+            inline auto qutility::device::event::StreamEventHelper::launch_host_func(const std::function<void()> & functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
+            {
+                set_device();
+                this_wait_other(dependencies...);
+                std::function<void()> *functor_ptr = new std::function<void()>(functor);
+                launch_host_func_impl(functor_ptr);
+                return record_event();
+            }
+
+            /// @brief Launch host function on the stream specified in this helper class.
+            ///        The parameter pack expects the dependencies this function launch will depend on.
+            ///        Note that this does not mean a synchronization.
+            /// @param func the host function
+            /// @param paras all parameters of the host function
+            /// @param ...dependencies all events or streams to depend on
+            template <typename FuncT, typename... dapi_cudaStreamOrEventType>
+            inline auto qutility::device::event::StreamEventHelper::launch_host_func(FuncT func, func_args_tuple<FuncT> paras, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
+            {
+                set_device();
+                this_wait_other(dependencies...);
+                std::function<void()> *functor_ptr = new std::function<void()>(
+                    [func, paras]() -> void
+                    {
+                        std::apply(func, paras);
+                    });
+                launch_host_func_impl(functor_ptr);
+                return record_event();
             }
 
             /// @brief Launch normal kernel on the device specified in this helper class.

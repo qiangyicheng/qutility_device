@@ -8,6 +8,7 @@
 
 #include "device_api/device_api_helper.h"
 #include "device_api/device_api_cooperative_groups.h"
+#include "event.h"
 
 namespace qutility
 {
@@ -15,6 +16,16 @@ namespace qutility
     {
         namespace event
         {
+
+            namespace detail
+            {
+                auto run_and_delete_afterwards(void *functor_ptr) -> void
+                {
+                    ((std::function<void()> *)functor_ptr)->operator()();
+                    delete ((std::function<void()> *)functor_ptr);
+                }
+            }
+
             using namespace std::literals;
 
             auto stream_wait_event(dapi_cudaStream_t stream) -> void
@@ -58,6 +69,13 @@ namespace qutility
             {
                 set_device();
                 dapi_checkCudaErrors(dapi_cudaDeviceSynchronize());
+            }
+
+            /// @brief synchronize device
+            auto StreamEventHelper::sync_stream() const -> void
+            {
+                set_device();
+                dapi_checkCudaErrors(dapi_cudaStreamSynchronize(stream_));
             }
 
             /// @brief Create stream and event on device. Old stream and event might be destroyed if the one requested is different from the existed ones.
@@ -197,6 +215,12 @@ namespace qutility
             {
                 set_device();
                 stream_wait_event(stream_, other);
+            }
+
+            auto StreamEventHelper::launch_host_func_impl(void *functor_ptr) const -> void
+            {
+                set_device();
+                dapi_checkCudaErrors(dapi_cudaLaunchHostFunc(stream_, detail::run_and_delete_afterwards, functor_ptr));
             }
 
             auto StreamEventHelper::launch_kernel_impl(void *func, dim3 dim_grid, dim3 dim_block, void **arg_ptr_table, std::size_t sharedMem) const -> void
