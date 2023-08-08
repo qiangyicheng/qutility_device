@@ -104,6 +104,7 @@ namespace qutility
                     {
                         dapi_checkCudaErrors(dapi_cufftExecZ2D(this->plan_, input, output));
                     }
+                    this->other_wait_this(this->working_->stream_);
                     return record_event();
                 }
 
