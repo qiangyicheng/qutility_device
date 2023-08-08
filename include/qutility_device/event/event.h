@@ -88,7 +88,7 @@ namespace qutility
                 auto other_wait_this(dapi_cudaStreamFirstType First, dapi_cudaStreamType... Rest) const -> void;
 
                 template <typename... dapi_cudaStreamOrEventType>
-                auto launch_host_func(const std::function<void()> & functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
+                auto launch_host_func(const std::function<void()> &functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
                 template <typename FuncT, typename... dapi_cudaStreamOrEventType>
                 auto launch_host_func(FuncT func, func_args_tuple<FuncT> paras, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t;
 
@@ -116,6 +116,7 @@ namespace qutility
                 std::optional<int> device_id_;
 
                 auto other_wait_this_impl(dapi_cudaStream_t other) const -> void;
+                auto other_wait_this_impl(dapi_cudaEvent_t other) const -> void;
                 auto this_wait_other_impl(dapi_cudaStream_t other) const -> void;
                 auto this_wait_other_impl(dapi_cudaEvent_t other) const -> void;
                 auto launch_host_func_impl(void *functor_ptr) const -> void;
@@ -157,12 +158,13 @@ namespace qutility
             /// @param functor The functor to call
             /// @param ...dependencies all events or streams to depend on
             template <typename... dapi_cudaStreamOrEventType>
-            inline auto qutility::device::event::StreamEventHelper::launch_host_func(const std::function<void()> & functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
+            inline auto qutility::device::event::StreamEventHelper::launch_host_func(const std::function<void()> &functor, dapi_cudaStreamOrEventType... dependencies) const -> dapi_cudaEvent_t
             {
                 set_device();
                 this_wait_other(dependencies...);
                 std::function<void()> *functor_ptr = new std::function<void()>(functor);
                 launch_host_func_impl(functor_ptr);
+                other_wait_this(dependencies...);
                 return record_event();
             }
 
@@ -183,6 +185,7 @@ namespace qutility
                         std::apply(func, paras);
                     });
                 launch_host_func_impl(functor_ptr);
+                other_wait_this(dependencies...);
                 return record_event();
             }
 
@@ -207,6 +210,7 @@ namespace qutility
                 launch_kernel_impl(
                     (void *)kernel,
                     dim_grid, dim_block, (void **)(paras_ptr.begin()), sharedMem);
+                other_wait_this(dependencies...);
                 return record_event();
             }
 
@@ -233,6 +237,7 @@ namespace qutility
                 launch_kernel_impl(
                     (void *)kernel,
                     dim3{(decltype(std::declval<dim3>().x))max_blocks_cg_, 1, 1}, dim3{ThreadsPerBlock, 1, 1}, (void **)(paras_ptr.begin()), sharedMem);
+                other_wait_this(dependencies...);
                 return record_event();
             }
 
@@ -259,6 +264,7 @@ namespace qutility
                 launch_kernel_cg_impl(
                     (void *)kernel,
                     dim_grid, dim_block, (void **)(paras_ptr.begin()), sharedMem);
+                other_wait_this(dependencies...);
                 return record_event();
             }
 
@@ -285,6 +291,7 @@ namespace qutility
                 launch_kernel_cg_impl(
                     (void *)kernel,
                     dim3{(decltype(std::declval<dim3>().z))max_blocks_cg_, 1, 1}, dim3{ThreadsPerBlock, 1, 1}, (void **)(paras_ptr.begin()), sharedMem);
+                other_wait_this(dependencies...);
                 return record_event();
             }
         }

@@ -196,12 +196,17 @@ namespace qutility
             {
             }
 
-            /// @brief Check whether the pointers belong to the device of current helper.
+            /// @brief Require the other stream must wait for this stream
             auto StreamEventHelper::other_wait_this_impl(dapi_cudaStream_t other) const -> void
             {
                 set_device();
                 dapi_checkCudaErrors(dapi_cudaEventRecord(finish_, stream_));
                 stream_wait_event(other, finish_);
+            }
+
+            auto StreamEventHelper::other_wait_this_impl(dapi_cudaEvent_t other) const -> void
+            {
+                //do nothing
             }
 
             auto StreamEventHelper::this_wait_other_impl(dapi_cudaStream_t other) const -> void
