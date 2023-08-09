@@ -223,6 +223,41 @@ namespace qutility
                 }
             }
 
+            /// @brief mix two arrays
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_mix_2(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef, ValT factor1, ValT factor2)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor1;
+                    auto val2 = src2[itr] * factor2;
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 2 + 0] + val2 * coef[itr_mix * 2 + 1];
+                    }
+                }
+            }
+
+            /// @brief mix one array(s)
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_mix_1(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *coef, ValT factor1)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor1;
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 2 + 0];
+                    }
+                }
+            }
+
             template <typename ValT = double, typename IntT = int>
             __global__ void scft_calc_new_field_2(IntT single_size, ValT *ksi, ValT *wA, ValT *wB, const ValT *phiA, const ValT *phiB, ValT xN, ValT acceptance)
             {
