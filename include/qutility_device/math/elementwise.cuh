@@ -272,6 +272,20 @@ namespace qutility
                 }
             }
 
+            template <typename ValT = double, typename IntT = int>
+            __global__ void scft_calc_field_error_2(IntT single_size, ValT *wA_diff, ValT *wB_diff, const ValT *wA, const ValT *wB, const ValT *phiA, const ValT *phiB, ValT xN, ValT acceptance)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto ksi = 0.5 * (wA[itr] + wB[itr] - xN);
+                    wA_diff[itr] = acceptance * (xN * phiB[itr] + ksi - wA[itr]);
+                    wB_diff[itr] = acceptance * (xN * phiA[itr] + ksi - wB[itr]);
+                }
+            }
+
         }
     }
 }

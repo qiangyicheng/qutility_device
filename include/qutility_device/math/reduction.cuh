@@ -97,7 +97,7 @@ namespace qutility
             template <std::size_t ThreadsPerBlock = 256, typename ValT = double, typename IntT = int>
             __global__ void scft_calc_new_field_and_energy_2(
                 IntT single_size,
-                ValT *FEValues, ValT *wA, ValT *wB, 
+                ValT *FEValues, ValT *wA, ValT *wB,
                 const ValT *Q, const ValT *phiA, const ValT *phiB,
                 ValT *working,
                 ValT xN, ValT acceptance)
@@ -127,6 +127,113 @@ namespace qutility
                     phiw += phiA[itr] * wA[itr] + phiB[itr] * wB[itr] + ksi * incomp;
                     wA[itr] += acceptance * wAdiff;
                     wB[itr] += acceptance * wBdiff;
+                    incomp = fabs(incomp);
+                    maxincomp = maxincomp > incomp ? maxincomp : incomp;
+                }
+                dapi___syncthreads();
+                {
+                    ValT phiphians = BlockReduceT(temp_storage).Sum(phiphi);
+                    if (threadIdx.x == 0)
+                        working[blockIdx.x] = phiphians;
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                    if (thread_rank == 0)
+                    {
+                        phiphians = 0;
+                        for (IntT block = 0; block < gridDim.x; block++)
+                            phiphians += working[block];
+                        FEValues[1] = xN * phiphians / single_size;
+                    }
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                }
+                {
+                    ValT phiwans = BlockReduceT(temp_storage).Sum(phiw);
+                    if (threadIdx.x == 0)
+                        working[blockIdx.x] = phiwans;
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                    if (thread_rank == 0)
+                    {
+                        phiwans = 0;
+                        for (IntT block = 0; block < gridDim.x; block++)
+                            phiwans += working[block];
+                        FEValues[3] = -phiwans / single_size;
+                    }
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                }
+                {
+                    ValT wwans = BlockReduceT(temp_storage).Sum(ww);
+                    ValT wdiffwdiffans = BlockReduceT(temp_storage).Sum(wdiffwdiff);
+                    if (threadIdx.x == 0)
+                    {
+                        working[blockIdx.x] = wwans;
+                    }
+                    if (threadIdx.x == 1)
+                    {
+                        working[gridDim.x + blockIdx.x] = wdiffwdiffans;
+                    }
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                    if (thread_rank == 0)
+                    {
+                        wwans = 0;
+                        wdiffwdiffans = 0;
+                        for (IntT block = 0; block < gridDim.x; block++)
+                        {
+                            wwans += working[block];
+                            wdiffwdiffans += working[gridDim.x + block];
+                        }
+                        FEValues[6] = wdiffwdiffans / wwans;
+                    }
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                }
+                {
+                    ValT maxincompans = BlockReduceT(temp_storage).Reduce(maxincomp, dapi_cub::Max());
+                    if (threadIdx.x == 0)
+                        working[blockIdx.x] = maxincompans;
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                    if (thread_rank == 0)
+                    {
+                        maxincompans = 0;
+                        for (IntT block = 0; block < gridDim.x; block++)
+                            maxincompans = maxincompans > working[block] ? maxincompans : working[block];
+                        FEValues[5] = maxincompans;
+                        FEValues[2] = -log(Q[0]);
+                        FEValues[4] = 0.;
+                    }
+                }
+            }
+
+            template <std::size_t ThreadsPerBlock = 256, typename ValT = double, typename IntT = int>
+            __global__ void scft_calc_field_error_and_energy_2(
+                IntT single_size,
+                ValT *FEValues, ValT *wA_diff, ValT *wB_diff,
+                const ValT *Q, const ValT *wA, const ValT *wB, const ValT *phiA, const ValT *phiB,
+                ValT *working,
+                ValT xN, ValT acceptance)
+            {
+                QUTILITY_DEVICE_SYNC_GRID_PREPARE;
+
+                const IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                const IntT grid_size = gridDim.x * blockDim.x;
+
+                using BlockReduceT = dapi_cub::BlockReduce<ValT, ThreadsPerBlock, dapi_cub::BlockReduceAlgorithm::BLOCK_REDUCE_WARP_REDUCTIONS>;
+                __shared__ typename BlockReduceT::TempStorage temp_storage;
+
+                ValT phiphi = 0.0;
+                ValT phiw = 0.0;
+                ValT ww = 0.0;
+                ValT wdiffwdiff = 0.0;
+                ValT maxincomp = 0.0;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto ksi = 0.5 * (wA[itr] + wB[itr] - xN);
+                    auto wAdiff = xN * phiB[itr] + ksi - wA[itr];
+                    auto wBdiff = xN * phiA[itr] + ksi - wB[itr];
+                    ww += wA[itr] * wA[itr] + wB[itr] * wB[itr];
+                    wdiffwdiff += wAdiff * wAdiff + wBdiff * wBdiff;
+                    phiphi += phiA[itr] * phiB[itr];
+                    auto incomp = 1. - phiA[itr] - phiB[itr];
+                    phiw += phiA[itr] * wA[itr] + phiB[itr] * wB[itr] + ksi * incomp;
+                    wA_diff[itr] = acceptance * wAdiff;
+                    wB_diff[itr] = acceptance * wBdiff;
                     incomp = fabs(incomp);
                     maxincomp = maxincomp > incomp ? maxincomp : incomp;
                 }
