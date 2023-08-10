@@ -16,28 +16,8 @@ namespace qutility
     {
         namespace math
         {
-            template <std::size_t Order, typename ValT>
-            __device__ __forceinline__ ValT fast_exponent(ValT val)
-            {
-                if constexpr (Order == 0)
-                {
-                    return 0;
-                }
-                else if constexpr (Order == 1)
-                {
-                    return val;
-                }
-                else if constexpr (Order == 2)
-                {
-                    return val * val;
-                }
-                else
-                {
-                    return fast_exponent<Order / 2>(val) * fast_exponent<Order - (Order / 2)>(val);
-                }
-            }
 
-            template <std::size_t Order, typename ValT = double, typename IntT = int>
+            template <int Order, typename ValT = double, typename IntT = int>
             __device__ __forceinline__ ValT nabla_eigen_index_1D_half_impl(IntT pos, IntT NN)
             {
                 if constexpr (Order == 0)
@@ -47,16 +27,16 @@ namespace qutility
                 else if constexpr (Order % 2 == 1)
                 {
                     ValT val = (pos * 2) == NN ? (ValT)0 : (ValT)pos;
-                    return fast_exponent<Order, ValT>(val);
+                    return utility::fast_exponent<Order, ValT>(val);
                 }
                 else
                 {
                     ValT val = pos;
-                    return fast_exponent<Order, ValT>(val);
+                    return utility::fast_exponent<Order, ValT>(val);
                 }
             }
 
-            template <std::size_t Order, typename ValT = double, typename IntT = int>
+            template <int Order, typename ValT = double, typename IntT = int>
             __device__ __forceinline__ ValT nabla_eigen_index_1D_impl(IntT pos, IntT NN)
             {
                 ValT val = (ValT)pos - ((int)(pos > ((NN + 1) / 2))) * (ValT)NN;
@@ -67,17 +47,17 @@ namespace qutility
                 else if constexpr (Order % 2 == 1)
                 {
                     val *= (pos * 2) == NN ? 0. : 1.;
-                    return fast_exponent<Order, ValT>(val);
+                    return utility::fast_exponent<Order, ValT>(val);
                 }
                 else
                 {
-                    return fast_exponent<Order, ValT>(val);
+                    return utility::fast_exponent<Order, ValT>(val);
                 }
             }
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            template <int Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
             __global__ __forceinline__ void nabla_eigenvalue_1D(ValT *k, ValT factor_x, IntT Nx)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
@@ -96,7 +76,7 @@ namespace qutility
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            template <int Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
             __global__ __forceinline__ void nabla_eigenvalue_2D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, IntT Nx, IntT Ny)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
@@ -152,7 +132,7 @@ namespace qutility
 
             /// @brief Only 1D grid with 1D block is allowed. Number of blocks mush be larger than dimensionality
             ///        The resulting data makes use of the Hermitian symmetry at the last dimension
-            template <std::size_t Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
+            template <int Order = 2, bool IfLastDimModified = false, typename ValT = double, typename IntT = int>
             __global__ __forceinline__ void nabla_eigenvalue_3D(ValT *k, ValT *working, ValT factor_x, ValT factor_y, ValT factor_z, IntT Nx, IntT Ny, IntT Nz)
             {
                 QUTILITY_DEVICE_SYNC_GRID_PREPARE;
