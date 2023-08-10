@@ -23,7 +23,11 @@ namespace qutility
                 template <int Order, typename ValT>
                 __device__ __forceinline__ ValT fast_exponent(ValT val)
                 {
-                    if constexpr (Order == 0)
+                    if constexpr (Order < 0)
+                    {
+                        return 1. / fast_exponent<-Order>(val);
+                    }
+                    else if constexpr (Order == 0)
                     {
                         return 1.;
                     }

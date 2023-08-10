@@ -6,6 +6,8 @@
 #include "device_api/device_api_cuda_runtime.h"
 #include "device_api/device_api_cuda_device.h"
 
+#include "common.cuh"
+
 namespace qutility
 {
     namespace device
@@ -205,7 +207,7 @@ namespace qutility
             }
 
             /// @brief mix three arrays
-            template <typename ValT = double, typename IntT = int>
+            template <int CoefIndex = 1, typename ValT = double, typename IntT = int>
             __global__ void array_mix_3(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *src3, const ValT *coef, ValT factor1, ValT factor2, ValT factor3)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
@@ -218,13 +220,16 @@ namespace qutility
                     auto val3 = src3[itr] * factor3;
                     for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
                     {
-                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 3 + 0] + val2 * coef[itr_mix * 3 + 1] + val3 * coef[itr_mix * 3 + 2];
+                        dst[itr_mix * single_size + itr] =
+                            val1 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 3 + 0]) +
+                            val2 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 3 + 1]) +
+                            val3 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 3 + 2]);
                     }
                 }
             }
 
             /// @brief mix two arrays
-            template <typename ValT = double, typename IntT = int>
+            template <int CoefIndex = 1, typename ValT = double, typename IntT = int>
             __global__ void array_mix_2(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef, ValT factor1, ValT factor2)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
@@ -236,13 +241,15 @@ namespace qutility
                     auto val2 = src2[itr] * factor2;
                     for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
                     {
-                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 2 + 0] + val2 * coef[itr_mix * 2 + 1];
+                        dst[itr_mix * single_size + itr] =
+                            val1 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 2 + 0]) +
+                            val2 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 2 + 1]);
                     }
                 }
             }
 
             /// @brief mix one array(s)
-            template <typename ValT = double, typename IntT = int>
+            template <int CoefIndex = 1, typename ValT = double, typename IntT = int>
             __global__ void array_mix_1(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *coef, ValT factor1)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
@@ -253,7 +260,7 @@ namespace qutility
                     auto val1 = src1[itr] * factor1;
                     for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
                     {
-                        dst[itr_mix * single_size + itr] = val1 * coef[itr_mix * 2 + 0];
+                        dst[itr_mix * single_size + itr] = val1 * utility::fast_exponent<CoefIndex, ValT>(coef[itr_mix * 1 + 0]);
                     }
                 }
             }
@@ -283,6 +290,65 @@ namespace qutility
                     auto ksi = 0.5 * (wA[itr] + wB[itr] - xN);
                     wA_diff[itr] = acceptance * (xN * phiB[itr] + ksi - wA[itr]);
                     wB_diff[itr] = acceptance * (xN * phiA[itr] + ksi - wB[itr]);
+                }
+            }
+
+            /// @brief mix three arrays according to two groups of coefficients on device, and one scalar from host
+            template <int CoefVaryingIndex = 1, int CoefConstantExponent = 1, typename ValT = double, typename IntT = int>
+            __global__ void array_mix_3_device_coef(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *src3, const ValT *coef_varying, const ValT *coef_constant, ValT factor)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[0]);
+                    auto val2 = src2[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[1]);
+                    auto val3 = src3[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[2]);
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] =
+                            val1 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 3 + 0]) +
+                            val2 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 3 + 1]) +
+                            val3 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 3 + 2]);
+                    }
+                }
+            }
+
+            /// @brief mix two arrays according to two groups of coefficients on device, and one scalar from host
+            template <int CoefVaryingIndex = 1, int CoefConstantExponent = 1, typename ValT = double, typename IntT = int>
+            __global__ void array_mix_2_device_coef(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef_varying, const ValT *coef_constant, ValT factor)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[0]);
+                    auto val2 = src2[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[1]);
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] =
+                            val1 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 2 + 0]) +
+                            val2 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 2 + 1]);
+                    }
+                }
+            }
+
+            /// @brief mix one array according to two groups of coefficients on device, and one scalar from host
+            template <int CoefVaryingIndex = 1, int CoefConstantExponent = 1, typename ValT = double, typename IntT = int>
+            __global__ void array_mix_1_device_coef(IntT single_size, IntT n_mix, ValT *dst, const ValT *src1, const ValT *coef_varying, const ValT *coef_constant, ValT factor)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val1 = src1[itr] * factor * utility::fast_exponent<CoefConstantExponent, ValT>(coef_constant[0]);
+                    for (IntT itr_mix = 0; itr_mix < n_mix; ++itr_mix)
+                    {
+                        dst[itr_mix * single_size + itr] = val1 * utility::fast_exponent<CoefVaryingIndex, ValT>(coef_varying[itr_mix * 1 + 0]);
+                    }
                 }
             }
 
