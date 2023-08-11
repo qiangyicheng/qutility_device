@@ -22,9 +22,9 @@ namespace qutility
             {
                 if constexpr (Order == 0)
                 {
-                    return 0;
+                    return 1;
                 }
-                else if constexpr (Order % 2 == 1)
+                else if constexpr (Order % 2 == 1 || Order % 2 == -1)
                 {
                     ValT val = (pos * 2) == NN ? (ValT)0 : (ValT)pos;
                     return utility::fast_exponent<Order, ValT>(val);
@@ -42,9 +42,9 @@ namespace qutility
                 ValT val = (ValT)pos - ((int)(pos > ((NN + 1) / 2))) * (ValT)NN;
                 if constexpr (Order == 0)
                 {
-                    return 0;
+                    return 1;
                 }
-                else if constexpr (Order % 2 == 1)
+                else if constexpr (Order % 2 == 1 || Order % 2 == -1)
                 {
                     val *= (pos * 2) == NN ? 0. : 1.;
                     return utility::fast_exponent<Order, ValT>(val);
@@ -70,7 +70,10 @@ namespace qutility
 
                 for (IntT itr_x = thread_rank; itr_x < Nx_hermit; itr_x += grid_size)
                 {
-                    k[itr_x] = factor_x * nabla_eigen_index_1D_half_impl<Order, ValT, IntT>(itr_x, Nx);
+                    auto val = factor_x * nabla_eigen_index_1D_half_impl<Order, ValT, IntT>(itr_x, Nx);
+                    if constexpr (IfLastDimModified)
+                        val *= (2. - ((itr_x % ((Nx + 1) / 2)) == 0));
+                    k[itr_x] = val;
                 }
             }
 

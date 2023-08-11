@@ -112,6 +112,25 @@ namespace qutility
                 }
             }
 
+            /// @brief Copy one array to another. Only 1D grid with 1D block is allowed
+            /// @tparam ValT the type of the data
+            /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_copy_dup(IntT single_size, IntT dup, ValT *dst, const ValT *src)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    auto val = src[itr];
+                    for (IntT itr_dup = 0; itr_dup < dup; ++itr_dup)
+                    {
+                        dst[itr_dup * single_size + itr] = val;
+                    }
+                }
+            }
+
             /// @brief Multiple one array to self. Only 1D grid with 1D block is allowed
             /// @tparam ValT the type of the data
             /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
@@ -190,7 +209,7 @@ namespace qutility
 
             /// @brief accumate arrays
             template <typename ValT = double, typename IntT = int>
-            __global__ void array_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src, const ValT *coef)
+            __global__ void array_list_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src, const ValT *coef)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
                 IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
@@ -201,6 +220,24 @@ namespace qutility
                     for (IntT itr_sum = 0; itr_sum < n_sum; ++itr_sum)
                     {
                         val += src[itr_sum * single_size + itr] * coef[itr_sum];
+                    }
+                    dst[itr] = val;
+                }
+            }
+
+            /// @brief accumate the product of two arrays
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_list_mul_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    ValT val = 0.;
+                    for (IntT itr_sum = 0; itr_sum < n_sum; ++itr_sum)
+                    {
+                        val += src1[itr_sum * single_size + itr] * src2[itr_sum * single_size + itr] * coef[itr_sum];
                     }
                     dst[itr] = val;
                 }
