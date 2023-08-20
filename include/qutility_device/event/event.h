@@ -268,7 +268,7 @@ namespace qutility
                 return record_event();
             }
 
-            /// @brief Launch normal kernel with 1D grid and 1D block on the device specified in this helper class.
+            /// @brief Launch cooperative kernel with 1D grid and 1D block on the device specified in this helper class.
             ///        Grid size and block size specification are skipped, while the kernel parameters can be filled by a initializer list of a automatically generated tuple, similar to the <<< >>> compiler extension of nvcc.
             ///        The parameter pack expects the dependencies this kernel launch will depend on.
             ///        The grid size is determined to be maximum number of concurrent blocks, where the threads per block are specified by the template parameter.
