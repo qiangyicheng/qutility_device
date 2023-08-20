@@ -191,6 +191,21 @@ namespace qutility
                 }
             }
 
+            /// @brief Scale array by the order of val on device. Only 1D grid with 1D block is allowed
+            /// @tparam ValT the type of the data
+            /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
+            template <int CoefIndex = 1, typename ValT = double, typename IntT = int>
+            __global__ void array_scale_device(IntT single_size, ValT *dst, const ValT *val_ptr)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    dst[itr] *= utility::fast_exponent<CoefIndex, ValT>(*val_ptr);
+                }
+            }
+
             /// @brief Divide array by normalizer on device. Only 1D grid with 1D block is allowed
             /// @tparam ValT the type of the data
             /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
