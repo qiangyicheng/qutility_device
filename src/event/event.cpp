@@ -8,7 +8,6 @@
 
 #include "device_api/device_api_helper.h"
 #include "device_api/device_api_cooperative_groups.h"
-#include "event.h"
 
 namespace qutility
 {
