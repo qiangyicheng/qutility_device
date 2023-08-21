@@ -3,7 +3,8 @@
 include(FetchContent)
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/2f80c2ba71c0e8922a03b9b855e5b019ad1f7064.zip
+  GIT_REPOSITORY git@github.com:google/googletest.git
+  GIT_TAG main
 )
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
