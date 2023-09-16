@@ -223,7 +223,7 @@ namespace qutility
             }
 
             /// @brief accumate arrays
-            template <typename ValT = double, typename IntT = int>
+            template <typename ValT = double, typename IntT = int, bool IncrementalMode = false>
             __global__ void array_list_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src, const ValT *coef)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
@@ -236,12 +236,44 @@ namespace qutility
                     {
                         val += src[itr_sum * single_size + itr] * coef[itr_sum];
                     }
-                    dst[itr] = val;
+                    if (IncrementalMode)
+                    {
+                        dst[itr] += val;
+                    }
+                    else
+                    {
+                        dst[itr] = val;
+                    }
+                }
+            }
+
+            /// @brief accumate arrays
+            template <typename ValT = double, typename IntT = int, bool IncrementalMode = false>
+            __global__ void array_list_scaled_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src, const ValT *coef, ValT factor)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    ValT val = 0.;
+                    for (IntT itr_sum = 0; itr_sum < n_sum; ++itr_sum)
+                    {
+                        val += src[itr_sum * single_size + itr] * coef[itr_sum];
+                    }
+                    if (IncrementalMode)
+                    {
+                        dst[itr] += factor * val;
+                    }
+                    else
+                    {
+                        dst[itr] = factor * val;
+                    }
                 }
             }
 
             /// @brief accumate the product of two arrays
-            template <typename ValT = double, typename IntT = int>
+            template <typename ValT = double, typename IntT = int, bool IncrementalMode = false>
             __global__ void array_list_mul_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef)
             {
                 static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
@@ -254,7 +286,39 @@ namespace qutility
                     {
                         val += src1[itr_sum * single_size + itr] * src2[itr_sum * single_size + itr] * coef[itr_sum];
                     }
-                    dst[itr] = val;
+                    if (IncrementalMode)
+                    {
+                        dst[itr] += val;
+                    }
+                    else
+                    {
+                        dst[itr] = val;
+                    }
+                }
+            }
+
+            /// @brief accumate the product of two arrays
+            template <typename ValT = double, typename IntT = int, bool IncrementalMode = false>
+            __global__ void array_list_mul_scaled_weighted_sum(IntT single_size, IntT n_sum, ValT *dst, const ValT *src1, const ValT *src2, const ValT *coef, double factor)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    ValT val = 0.;
+                    for (IntT itr_sum = 0; itr_sum < n_sum; ++itr_sum)
+                    {
+                        val += src1[itr_sum * single_size + itr] * src2[itr_sum * single_size + itr] * coef[itr_sum];
+                    }
+                    if (IncrementalMode)
+                    {
+                        dst[itr] += factor * val;
+                    }
+                    else
+                    {
+                        dst[itr] = factor * val;
+                    }
                 }
             }
 
