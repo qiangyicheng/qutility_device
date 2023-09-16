@@ -19,6 +19,49 @@ namespace qutility
     {
         namespace fft_cb
         {
+            namespace workaround
+            {
+                inline __global__ void run_cufftCallbackLoadD(dapi_cufftCallbackLoadD func, size_t size, void *dataIn, void *callerInfo, void *sharedPointer)
+                {
+                    size_t thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                    size_t grid_size = gridDim.x * blockDim.x;
+                    for (size_t itr = thread_rank; itr < size; itr += grid_size)
+                    {
+                        ((dapi_cufftDoubleReal *)dataIn)[itr] = func(dataIn, itr, callerInfo, sharedPointer);
+                    }
+                }
+
+                inline __global__ void run_cufftCallbackLoadZ(dapi_cufftCallbackLoadZ func, size_t size, void *dataIn, void *callerInfo, void *sharedPointer)
+                {
+                    size_t thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                    size_t grid_size = gridDim.x * blockDim.x;
+                    for (size_t itr = thread_rank; itr < size; itr += grid_size)
+                    {
+                        ((dapi_cufftDoubleComplex *)dataIn)[itr] = func(dataIn, itr, callerInfo, sharedPointer);
+                    }
+                }
+
+                inline __global__ void run_cufftCallbackStoreD(dapi_cufftCallbackStoreD func, size_t size, void *dataOut, void *callerInfo, void *sharedPointer)
+                {
+                    size_t thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                    size_t grid_size = gridDim.x * blockDim.x;
+                    for (size_t itr = thread_rank; itr < size; itr += grid_size)
+                    {
+                        func(dataOut, itr, ((dapi_cufftDoubleReal *)dataOut)[itr], callerInfo, sharedPointer);
+                    }
+                }
+
+                inline __global__ void run_cufftCallbackStoreZ(dapi_cufftCallbackStoreZ func, size_t size, void *dataOut, void *callerInfo, void *sharedPointer)
+                {
+                    size_t thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                    size_t grid_size = gridDim.x * blockDim.x;
+                    for (size_t itr = thread_rank; itr < size; itr += grid_size)
+                    {
+                        func(dataOut, itr, ((dapi_cufftDoubleComplex *)dataOut)[itr], callerInfo, sharedPointer);
+                    }
+                }
+            }
+
             using DIRECTION = detail::FFTPlan::DIRECTION;
 
             template <DIRECTION Dir, typename CBLoadDataT = void, typename CBStoreDataT = void>
@@ -65,9 +108,11 @@ namespace qutility
                     if constexpr (if_using_load_callback_)
                     {
                         this->set_device();
-                        auto load_data_host = cb_load_data_.register_data(load_data);
+                        load_data_host_ = cb_load_data_.register_data(load_data);
+#ifndef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_LD
                         dapi_checkCudaErrors(dapi_cufftXtClearCallback(this->plan_, call_back_load_t_));
-                        dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&load_kernel_host_ptr_, call_back_load_t_, &load_data_host));
+                        dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&load_kernel_host_ptr_, call_back_load_t_, &load_data_host_));
+#endif
                     }
                     else
                     {
@@ -80,9 +125,11 @@ namespace qutility
                     if constexpr (if_using_store_callback_)
                     {
                         this->set_device();
-                        auto store_data_host = cb_store_data_.register_data(store_data);
+                        store_data_host_ = cb_store_data_.register_data(store_data);
+#ifndef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_ST
                         dapi_checkCudaErrors(dapi_cufftXtClearCallback(this->plan_, call_back_store_t_));
-                        dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&store_kernel_host_ptr_, call_back_store_t_, &store_data_host));
+                        dapi_checkCudaErrors(dapi_cufftXtSetCallback(this->plan_, (void **)&store_kernel_host_ptr_, call_back_store_t_, &store_data_host_));
+#endif
                     }
                     else
                     {
@@ -98,11 +145,39 @@ namespace qutility
                     this->this_wait_other(dependencies...);
                     if constexpr (dir_ == DIRECTION::FORWARD)
                     {
+#ifdef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_LD
+                        if constexpr (if_using_load_callback_)
+                            this->launch_kernel<256>(
+                                workaround::run_cufftCallbackLoadD,
+                                {load_kernel_host_ptr_, this->box_.compressed_box_.total_size_ * this->n_batch_, (void *)input, load_data_host_, nullptr},
+                                0);
+#endif
                         dapi_checkCudaErrors(dapi_cufftExecD2Z(this->plan_, input, output));
+#ifdef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_ST
+                        if constexpr (if_using_store_callback_)
+                            this->launch_kernel<256>(
+                                workaround::run_cufftCallbackStoreZ,
+                                {store_kernel_host_ptr_, this->box_.compressed_box_.total_size_hermit_ * this->n_batch_, (void *)output, store_data_host_, nullptr},
+                                0);
+#endif
                     }
                     else
                     {
+#ifdef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_LD
+                        if constexpr (if_using_load_callback_)
+                            this->launch_kernel<256>(
+                                workaround::run_cufftCallbackLoadZ,
+                                {load_kernel_host_ptr_, this->box_.compressed_box_.total_size_hermit_ * this->n_batch_, (void *)input, load_data_host_, nullptr},
+                                0);
+#endif
                         dapi_checkCudaErrors(dapi_cufftExecZ2D(this->plan_, input, output));
+#ifdef QUTILITY_DEVICE_CUFFT_CB_WORKAROUND_ST
+                        if constexpr (if_using_store_callback_)
+                            this->launch_kernel<256>(
+                                workaround::run_cufftCallbackStoreD,
+                                {store_kernel_host_ptr_, this->box_.compressed_box_.total_size_ * this->n_batch_, (void *)output, store_data_host_, nullptr},
+                                0);
+#endif
                     }
                     this->other_wait_this(this->working_->stream_);
                     return record_event();
@@ -114,6 +189,8 @@ namespace qutility
                 const CallbackStoreKernelT store_kernel_host_ptr_;
 
             private:
+                void *load_data_host_ = nullptr;
+                void *store_data_host_ = nullptr;
                 auto get_callback_host_ptr(const CallbackLoadKernelT &load) -> CallbackLoadKernelT
                 {
                     if (if_using_load_callback_)
