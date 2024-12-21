@@ -25,6 +25,12 @@ namespace qutility
                 ///        !***CAUTION***!: the callerInfo is a ****REAL**** matrix that has the same data layout, thus the number of elements, with dataOut, which is a complex matrix with Hermit symmetry
                 __device__ dapi_cufftCallbackStoreZ D2ZStoreMulRealDevicePtr = D2ZStoreMulReal;
 
+                /// @brief Multiple a complex array while storing of D2Z transform, and increment another array by the real part of the result
+                __device__ dapi_cufftCallbackStoreZ D2ZStoreMulComplexDropImaginaryIncreDevicePtr = D2ZStoreMulComplexDropImaginaryIncre;
+
+                /// @brief Multiple a complex array while storing of D2Z transform, and increment another array by the real part of the result
+                __device__ dapi_cufftCallbackStoreZ D2ZStoreHalfMulComplexDropImaginaryIncreDevicePtr = D2ZStoreHalfMulComplexDropImaginaryIncre;
+
                 /// @brief Multiple a complex array while storing of D2Z transform, and increment another array by the imaginary part of the result
                 __device__ dapi_cufftCallbackStoreZ D2ZStoreMulComplexDropRealIncreDevicePtr = D2ZStoreMulComplexDropRealIncre;
 

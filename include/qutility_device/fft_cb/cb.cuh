@@ -122,6 +122,44 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
                 ////////////////////////////////////////////////////////////////////////////////
+                struct D2ZStoreMulComplexDropImaginaryIncreInfo_st
+                {
+                    const dapi_cufftDoubleComplex *incre_mul_src;
+                    dapi_cufftDoubleReal *incre_dst;
+                };
+                using D2ZStoreMulComplexDropImaginaryIncreInfo_t = D2ZStoreMulComplexDropImaginaryIncreInfo_st *;
+                __device__ __forceinline__ void D2ZStoreMulComplexDropImaginaryIncreImpl(dapi_cufftDoubleComplex *dataOut, size_t offset, dapi_cufftDoubleComplex element, D2ZStoreMulComplexDropImaginaryIncreInfo_t data, void *sharedPointer = nullptr)
+                {
+                    data->incre_dst[offset] += element.x * data->incre_mul_src[offset].x + element.y * data->incre_mul_src[offset].y;
+                }
+                __device__ __forceinline__ void D2ZStoreMulComplexDropImaginaryIncre(void *dataOut, size_t offset, dapi_cufftDoubleComplex element, void *callerInfo, void *sharedPointer)
+                {
+                    return D2ZStoreMulComplexDropImaginaryIncreImpl((dapi_cufftDoubleComplex *)dataOut, offset, element, (D2ZStoreMulComplexDropImaginaryIncreInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackStoreZ D2ZStoreMulComplexDropImaginaryIncreDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
+                struct D2ZStoreHalfMulComplexDropImaginaryIncreInfo_st
+                {
+                    const dapi_cufftDoubleComplex *incre_mul_src;
+                    dapi_cufftDoubleReal *incre_dst;
+                };
+                using D2ZStoreHalfMulComplexDropImaginaryIncreInfo_t = D2ZStoreHalfMulComplexDropImaginaryIncreInfo_st *;
+                __device__ __forceinline__ void D2ZStoreHalfMulComplexDropImaginaryIncreImpl(dapi_cufftDoubleComplex *dataOut, size_t offset, dapi_cufftDoubleComplex element, D2ZStoreHalfMulComplexDropImaginaryIncreInfo_t data, void *sharedPointer = nullptr)
+                {
+                    data->incre_dst[offset] += 0.5 * (element.x * data->incre_mul_src[offset].x + element.y * data->incre_mul_src[offset].y);
+                }
+                __device__ __forceinline__ void D2ZStoreHalfMulComplexDropImaginaryIncre(void *dataOut, size_t offset, dapi_cufftDoubleComplex element, void *callerInfo, void *sharedPointer)
+                {
+                    return D2ZStoreHalfMulComplexDropImaginaryIncreImpl((dapi_cufftDoubleComplex *)dataOut, offset, element, (D2ZStoreHalfMulComplexDropImaginaryIncreInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackStoreZ D2ZStoreHalfMulComplexDropImaginaryIncreDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
                 struct D2ZStoreMulComplexDropRealIncreInfo_st
                 {
                     const dapi_cufftDoubleComplex *incre_mul_src;
