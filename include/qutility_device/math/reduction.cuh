@@ -342,6 +342,41 @@ namespace qutility
                 }
             }
 
+            template <std::size_t ThreadsPerBlock = 256, int CoefExponent = -2, typename ValT = double, typename IntT = int>
+            __global__ void array_mul2_total_device_coef(IntT single_size, ValT *dst, const ValT *src1, const ValT *src2, const ValT *src3, const ValT *coef, ValT *working, ValT factor)
+            {
+                QUTILITY_DEVICE_SYNC_GRID_PREPARE;
+
+                const IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                const IntT grid_size = gridDim.x * blockDim.x;
+
+                using BlockReduceT = dapi_cub::BlockReduce<ValT, ThreadsPerBlock, dapi_cub::BlockReduceAlgorithm::BLOCK_REDUCE_WARP_REDUCTIONS>;
+                __shared__ typename BlockReduceT::TempStorage temp_storage;
+                {
+                    ValT data = 0.0;
+                    for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                    {
+                        data += src1[itr] * src2[itr]* src3[itr];
+                    }
+                    dapi___syncthreads();
+                    ValT agg = BlockReduceT(temp_storage).Sum(data);
+                    if (threadIdx.x == 0)
+                    {
+                        working[blockIdx.x] = agg;
+                    }
+                    QUTILITY_DEVICE_SYNC_GRID_SYNC((unsigned int *)(working));
+                    if (thread_rank == 0)
+                    {
+                        for (IntT block = 1; block < gridDim.x; block++)
+                        {
+                            agg += working[block];
+                        }
+                        dst[0] = factor * agg * utility::fast_exponent<CoefExponent>(coef[0]);
+                    }
+                }
+            }
+
+
         }
     }
 }

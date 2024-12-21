@@ -31,6 +31,9 @@ namespace qutility
                 /// @brief Multiple a complex array while storing of D2Z transform, and increment another array by the imaginary part of the result
                 __device__ dapi_cufftCallbackStoreZ D2ZStoreHalfMulComplexDropRealIncreDevicePtr = D2ZStoreHalfMulComplexDropRealIncre;
 
+                /// @brief Multiple an imaginary array while loading of Z2D transform
+                __device__ dapi_cufftCallbackLoadZ Z2DLoadMulImaginaryDevicePtr = Z2DLoadMulImaginary;
+
                 /// @brief Multiple an complex array while loading of Z2D transform
                 __device__ dapi_cufftCallbackLoadZ Z2DLoadMulComplexDevicePtr = Z2DLoadMulComplex;
 

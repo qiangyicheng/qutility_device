@@ -46,6 +46,37 @@ namespace qutility
                 }
             }
 
+            /// @brief Calculate the log of a single field stored in src, and copy the result to dst for dup times. Only 1D grid with 1D block is allowed
+            /// @tparam ValT the type of the data
+            /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_log_dup(IntT single_size, IntT dup, ValT *dst, const ValT *src, ValT coef)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    ValT val;
+                    if constexpr (std::is_same<ValT, double>::value)
+                    {
+                        val = coef * log(src[itr]);
+                    }
+                    else if constexpr (std::is_same<ValT, float>::value)
+                    {
+                        val = coef * logf(src[itr]);
+                    }
+                    else
+                    {
+                        static_assert(std::is_floating_point<ValT>::value, "Only float point allowed here");
+                    }
+                    for (IntT itr_dup = 0; itr_dup < dup; ++itr_dup)
+                    {
+                        dst[itr_dup * single_size + itr] = val;
+                    }
+                }
+            }
+
             /// @brief Calculate the exp of an imaginary single field stored in src, and copy the result to dst for dup times. Only 1D grid with 1D block is allowed
             /// @tparam ValT the type of the data
             /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
@@ -158,6 +189,21 @@ namespace qutility
                 for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
                 {
                     dst[itr] = src1[itr] * src2[itr];
+                }
+            }
+
+            /// @brief Divide self by another array. Only 1D grid with 1D block is allowed
+            /// @tparam ValT the type of the data
+            /// @tparam IntT the type of the counter. Note that usually int is sufficient and deliver slightly higher performance than std::size_t
+            template <typename ValT = double, typename IntT = int>
+            __global__ void array_selfdivide(IntT single_size, ValT *dst, const ValT *src)
+            {
+                static_assert(std::is_integral<IntT>::value, "Only integer allowed here");
+                IntT thread_rank = blockIdx.x * blockDim.x + threadIdx.x;
+                IntT grid_size = gridDim.x * blockDim.x;
+                for (IntT itr = thread_rank; itr < single_size; itr += grid_size)
+                {
+                    dst[itr] /= src[itr];
                 }
             }
 

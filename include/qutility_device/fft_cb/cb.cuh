@@ -160,12 +160,31 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
                 ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DLoadMulImaginaryInfo_st
+                {
+                    const dapi_cufftDoubleReal *m;
+                };
+                using Z2DLoadMulImaginaryInfo_t = Z2DLoadMulImaginaryInfo_st *;
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulImaginaryImpl(const dapi_cufftDoubleComplex *dataIn, size_t offset, Z2DLoadMulImaginaryInfo_t data, void *sharedPointer = nullptr)
+                {
+                    return dapi_cufftDoubleComplex{
+                        - dataIn[offset].y * data->m[offset], dataIn[offset].x * data->m[offset]};
+                }
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulImaginary(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DLoadMulImaginaryImpl((dapi_cufftDoubleComplex *)dataIn, offset, (Z2DLoadMulImaginaryInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackLoadZ Z2DLoadMulImaginaryDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
                 struct Z2DLoadMulComplexInfo_st
                 {
                     const dapi_cufftDoubleComplex *m;
                 };
                 using Z2DLoadMulComplexInfo_t = Z2DLoadMulComplexInfo_st *;
-                __device__ __forceinline__ cufftDoubleComplex Z2DLoadMulComplexImpl(const dapi_cufftDoubleComplex *dataIn, size_t offset, Z2DLoadMulComplexInfo_t data, void *sharedPointer = nullptr)
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulComplexImpl(const dapi_cufftDoubleComplex *dataIn, size_t offset, Z2DLoadMulComplexInfo_t data, void *sharedPointer = nullptr)
                 {
                     return dapi_cufftDoubleComplex{
                         dataIn[offset].x * data->m[offset].x - dataIn[offset].y * data->m[offset].y,
