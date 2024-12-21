@@ -179,6 +179,25 @@ namespace qutility
                 ////////////////////////////////////////////////////////////////////////////////
                 // CallBack Function
                 ////////////////////////////////////////////////////////////////////////////////
+                struct Z2DLoadMulRealInfo_st
+                {
+                    const dapi_cufftDoubleReal *m;
+                };
+                using Z2DLoadMulRealInfo_t = Z2DLoadMulRealInfo_st *;
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulRealImpl(const dapi_cufftDoubleComplex *dataIn, size_t offset, Z2DLoadMulRealInfo_t data, void *sharedPointer = nullptr)
+                {
+                    return dapi_cufftDoubleComplex{
+                        dataIn[offset].x * data->m[offset], dataIn[offset].y * data->m[offset]};
+                }
+                __device__ __forceinline__ dapi_cufftDoubleComplex Z2DLoadMulReal(void *dataIn, size_t offset, void *callerInfo, void *sharedPointer)
+                {
+                    return Z2DLoadMulRealImpl((dapi_cufftDoubleComplex *)dataIn, offset, (Z2DLoadMulRealInfo_t)callerInfo);
+                }
+                extern __device__ dapi_cufftCallbackLoadZ Z2DLoadMulRealDevicePtr;
+
+                ////////////////////////////////////////////////////////////////////////////////
+                // CallBack Function
+                ////////////////////////////////////////////////////////////////////////////////
                 struct Z2DLoadMulComplexInfo_st
                 {
                     const dapi_cufftDoubleComplex *m;
